@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ppo-autoscaler
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ppo-autoscaler
+  namespace: default
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["ppo-workers"]
+    verbs: ["get"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    resourceNames: ["ppo-workers"]
+    verbs: ["get", "patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ppo-autoscaler
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: ppo-autoscaler
+    namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ppo-autoscaler
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ppo-workers
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ppo-worker
+  template:
+    metadata:
+      labels:
+        app: ppo-worker
+    spec:
+      containers:
+        - name: worker
+          image: ppo-autoscaler:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APP_ROLE
+              value: worker
+          ports:
+            - name: http
+              containerPort: 8001
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 2
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 300m
+              memory: 192Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ppo-workers
+  namespace: default
+spec:
+  selector:
+    app: ppo-worker
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ppo-controller
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ppo-controller
+  template:
+    metadata:
+      labels:
+        app: ppo-controller
+    spec:
+      serviceAccountName: ppo-autoscaler
+      containers:
+        - name: gateway
+          image: ppo-autoscaler:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APP_ROLE
+              value: gateway
+            - name: CONTROL_INTERVAL_SECONDS
+              value: "5"
+            - name: WORKER_URL
+              value: http://ppo-workers:8001/work
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ppo-controller
+  namespace: default
+spec:
+  selector:
+    app: ppo-controller
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP
