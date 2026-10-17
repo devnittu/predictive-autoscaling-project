@@ -1,6 +1,37 @@
-# Workload-Aware Predictive Autoscaling
+# Predictive Autoscaling Platform
 
-A reproducible forecasting and scaling simulation for the IBM Z Datathon. The project generates synthetic workload traces, fits a small linear forecasting baseline, and compares a forecast driven policy with a delayed reactive policy on identical held-out intervals. It is an educational simulation, not a Kubernetes autoscaler and not a live capacity benchmark.
+An end-to-end predictive autoscaling project for the IBM Z Datathon. The
+repository combines a deterministic forecasting experiment, a PPO policy, and
+a real Kubernetes gateway/worker demo validated on IBM LinuxONE (`s390x`).
+
+The project has two complementary outcomes:
+
+1. **Offline evidence:** reproducible workload generation, chronological
+   forecasting, and a fair predictive-versus-reactive comparison.
+2. **Live evidence:** real HTTP traffic, gateway latency percentiles, forecast
+   telemetry, and genuine Kubernetes replica provisioning and scale-down.
+
+## Repository layout
+
+```text
+.
+├── src/                         # Canonical application and experiment code
+├── tests/                       # End-to-end regression and fairness tests
+├── scripts/                    # Reproducible local and remote runners
+├── k8s/                        # Kubernetes manifests for the live demo
+├── models/                     # Trained PPO policy and seed metadata
+├── data/                       # Generated workload input
+├── workstreams/
+│   ├── forecasting-simulation/ # Forecasting and offline evaluation workspace
+│   └── predictive-kubernetes/  # PPO and Kubernetes delivery workspace
+├── Dockerfile.ppo              # Gateway/worker image
+└── requirements*.txt           # Runtime and experiment dependencies
+```
+
+The root `src/`, `tests/`, `k8s/`, and `scripts/` directories are canonical.
+The two `workstreams/` directories are clearly named ownership workspaces for
+parallel development and documentation; they do not introduce alternate
+runtime packages.
 
 ## Problem and motivation
 
@@ -17,20 +48,19 @@ workload_generator -> workload.csv -> forecaster -> forecast CSV + accuracy plot
 
 The original `src.app` FastAPI service remains a health-check example. The separate PPO demo below runs a gateway and worker Deployment; the gateway forwards real HTTP requests and patches the worker Deployment scale through Kubernetes RBAC.
 
-## Team split in this monorepo
+## Workstream ownership
 
 Two teammates can work in parallel in the same repository:
 
-- [team-forecasting/](./team-forecasting/) owns workload generation, forecasting,
-  offline evaluation, and reactive-versus-predictive fairness tests.
-- [team-ppo-kubernetes/](./team-ppo-kubernetes/) owns PPO training/evaluation,
-  the live Kubernetes path, RBAC/manifests, and LinuxONE validation.
+- [workstreams/forecasting-simulation/](./workstreams/forecasting-simulation/)
+  owns workload generation, forecasting, offline evaluation, and
+  reactive-versus-predictive fairness tests.
+- [workstreams/predictive-kubernetes/](./workstreams/predictive-kubernetes/)
+  owns PPO training/evaluation, the live Kubernetes path, RBAC/manifests, and
+  LinuxONE validation.
 
-The folders are ownership/workspace boundaries, not separate Python packages.
-Executable files remain in the existing `src/`, `tests/`, `k8s/`, and root
-configuration locations so imports and the documented commands stay unchanged.
-Coordinate changes to shared `README.md`, generated outputs, and dependency
-files before merging.
+Coordinate changes to shared root documentation, generated outputs, and
+dependency files before merging.
 
 ## Setup and run
 

@@ -1,9 +1,10 @@
-# PPO and Kubernetes autoscaling demo
+# Predictive Kubernetes Workstream
 
-This directory is a self-contained PPO/Kubernetes project inside the shared
-repository. Its code, tests, Kubernetes manifest, dependencies, trained model,
-and workload input all live here. Run the commands below from this directory;
-they do not use or modify the forecasting teammate's source files.
+This directory documents the PPO and Kubernetes delivery workstream inside the
+shared repository. Its code, tests, Kubernetes manifest, dependencies, trained
+model, and workload input are kept together for ownership and review. The
+canonical runtime implementation remains in the repository-root `src/`,
+`tests/`, `k8s/`, and `scripts/` locations.
 
 ## Project files
 

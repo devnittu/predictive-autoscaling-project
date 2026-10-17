@@ -1,4 +1,4 @@
-# Teammate 1: Forecasting and Simulation
+# Forecasting and Simulation Workstream
 
 This folder defines the forecasting/simulation workstream in the shared monorepo.
 The executable source remains under `src/` so the original commands and imports
@@ -35,4 +35,5 @@ python -m unittest discover -s tests -v
 ```
 
 Do not commit local virtual environments or generated files excluded by the
-root `.gitignore`.
+root `.gitignore`. The canonical implementation remains in the repository-root
+`src/`, `tests/`, `data/`, and `results/` locations.
