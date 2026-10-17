@@ -50,7 +50,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: ppo-autoscaler:local
+          image: ppo-autoscaler:fixed-20261018
           imagePullPolicy: IfNotPresent
           env:
             - name: APP_ROLE
@@ -100,17 +100,27 @@ spec:
         app: ppo-controller
     spec:
       serviceAccountName: ppo-autoscaler
+      hostNetwork: true
+      dnsPolicy: Default
       containers:
         - name: gateway
-          image: ppo-autoscaler:local
+          image: ppo-autoscaler:fixed-20261018
           imagePullPolicy: IfNotPresent
           env:
             - name: APP_ROLE
               value: gateway
             - name: CONTROL_INTERVAL_SECONDS
               value: "5"
+            - name: MAX_REPLICAS
+              value: "20"
             - name: WORKER_URL
-              value: http://ppo-workers:8001/work
+              value: http://10.152.183.58:8001/work
+            - name: WORKER_HEALTH_URL
+              value: http://10.152.183.58:8001/health
+            - name: KUBERNETES_SERVICE_HOST
+              value: "127.0.0.1"
+            - name: KUBERNETES_SERVICE_PORT
+              value: "16443"
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -120,6 +130,7 @@ spec:
               containerPort: 8000
           readinessProbe:
             httpGet:
+              host: 127.0.0.1
               path: /ready
               port: 8000
             initialDelaySeconds: 5
