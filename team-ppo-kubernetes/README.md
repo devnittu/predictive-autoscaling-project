@@ -32,14 +32,40 @@ On Linux/macOS, activate `.venv` with `source .venv/bin/activate` and use the
 same Python commands. Evaluation writes interval and summary CSVs under the
 local `results/` directory.
 
-## Live Kubernetes demo
+## Container smoke test
 
-Build and load the image in your local cluster, then apply the manifest:
+Build the image from this directory. Use either Docker or Podman:
 
 ```sh
 docker build -f Dockerfile.ppo -t ppo-autoscaler:local .
+```
+
+Start a worker container and check its health and request handler:
+
+```sh
+docker run --rm -d --name ppo-worker -e APP_ROLE=worker \
+  -p 8001:8001 ppo-autoscaler:local
+curl http://127.0.0.1:8001/health
+curl http://127.0.0.1:8001/ready
+curl -X POST http://127.0.0.1:8001/work
+docker stop ppo-worker
+```
+
+For Podman, replace `docker` with `podman`. This smoke test checks the
+containerized worker; testing gateway scaling requires Kubernetes.
+
+## Live Kubernetes demo
+
+For Kind, create the cluster, load the image, apply the manifest, and wait for
+both deployments:
+
+```sh
+kind create cluster --name ppo-autoscaling
+docker build -f Dockerfile.ppo -t ppo-autoscaler:local .
+kind load docker-image ppo-autoscaler:local --name ppo-autoscaling
 kubectl apply -f k8s/ppo-autoscaler.yaml
-kubectl get deployment,service
+kubectl rollout status deployment/ppo-workers
+kubectl rollout status deployment/ppo-controller
 kubectl port-forward service/ppo-controller 8080:8000
 ```
 
@@ -49,8 +75,6 @@ RBAC scoped to that Deployment and its scale subresource. `/health` reports
 process liveness. `/ready` reports readiness; the gateway checks that the
 worker Service responds before becoming ready.
 
-For Kind, create the cluster before applying the manifest and load the image
-with `kind load docker-image ppo-autoscaler:local --name <cluster-name>`.
 Image references and cluster setup may need adjustment for another cluster.
 
 ## LinuxONE (`s390x`) validation
