@@ -18,6 +18,7 @@ The project has two complementary outcomes:
 ├── src/                         # Canonical application and experiment code
 ├── tests/                       # End-to-end regression and fairness tests
 ├── scripts/                    # Reproducible local and remote runners
+├── demo/                       # Video-ready runbook and live demo launchers
 ├── k8s/                        # Kubernetes manifests for the live demo
 ├── models/                     # Trained PPO policy and seed metadata
 ├── data/                       # Generated workload input
@@ -32,6 +33,9 @@ The root `src/`, `tests/`, `k8s/`, and `scripts/` directories are canonical.
 The two `workstreams/` directories are clearly named ownership workspaces for
 parallel development and documentation; they do not introduce alternate
 runtime packages.
+
+For the final video, start with the [demo kit](./demo/), which contains the
+recording sequence, live health check, and gradual-ramp launcher.
 
 ## Problem and motivation
 
