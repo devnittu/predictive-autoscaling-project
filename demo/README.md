@@ -4,6 +4,10 @@ This folder contains the material for the final demonstration video. The
 application code remains in the repository root; this kit provides the
 repeatable run order and ready-to-use commands.
 
+Open [ibm_linuxone_demo.ipynb](./ibm_linuxone_demo.ipynb) in the existing
+JupyterLab container to show the `s390x` runtime, live LinuxONE health,
+controller state, real ramp traffic, and forecast/capacity plots.
+
 ## Demo endpoints
 
 Open these browser tabs before recording:
