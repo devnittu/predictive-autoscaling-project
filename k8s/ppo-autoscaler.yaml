@@ -60,7 +60,7 @@ spec:
               containerPort: 8001
           readinessProbe:
             httpGet:
-              path: /health
+              path: /ready
               port: 8001
             initialDelaySeconds: 2
           resources:
@@ -120,7 +120,7 @@ spec:
               containerPort: 8000
           readinessProbe:
             httpGet:
-              path: /health
+              path: /ready
               port: 8000
             initialDelaySeconds: 5
           resources:

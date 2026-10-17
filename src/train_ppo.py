@@ -61,12 +61,18 @@ def train(steps=30000, seed=17, workload=ROOT / "data/workload.csv", out=ROOT / 
                 batch[k].append(v)
             obs = env.reset() if done else next_obs
             collected += 1
-        # GAE is computed backward; terminated episodes have no bootstrap value.
+        # GAE is computed backward. Terminated episodes do not bootstrap; a
+        # rollout that ends mid-episode bootstraps from its final observation.
         adv = np.zeros(len(batch["rewards"]), dtype=np.float32)
         last = 0.0
         for t in reversed(range(len(adv))):
             mask = 0.0 if batch["dones"][t] else 1.0
-            nv = 0.0 if batch["dones"][t] else float(agent.forward(batch["obs"][t+1])[2]) if t+1 < len(adv) else 0.0
+            if batch["dones"][t]:
+                nv = 0.0
+            elif t + 1 < len(adv):
+                nv = float(agent.forward(batch["obs"][t + 1])[2])
+            else:
+                nv = float(agent.forward(next_obs)[2])
             delta = batch["rewards"][t] + .99 * nv * mask - batch["values"][t]
             last = delta + .99 * .95 * mask * last
             adv[t] = last

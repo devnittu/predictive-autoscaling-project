@@ -26,9 +26,18 @@ continue to work.
 - Python 3.12 and architecture-specific dependency checks.
 - Runtime health, readiness, and deployment documentation.
 
+The PPO container uses Python 3.12 (`python:3.12-slim`). Install
+`requirements-ppo.txt` with Python 3.12 when training or evaluating locally so
+the local runtime matches the live image. The forecasting workstream keeps its
+own Python and dependency requirements.
+
+The live app exposes `/health` for process liveness and `/ready` for Kubernetes
+readiness. The gateway is ready only while its worker Service responds to a
+health request; worker pods report ready when their app is running.
+
 ## Validation
 
-From the repository root:
+From the repository root with Python 3.12 active:
 
 ```powershell
 python -m unittest tests.test_ppo_project -v

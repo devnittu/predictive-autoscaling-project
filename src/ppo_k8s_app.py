@@ -18,6 +18,7 @@ ROLE = os.getenv("APP_ROLE", "gateway")
 MODEL = os.getenv("PPO_MODEL", "/app/models/ppo_autoscaler.npz")
 WINDOW = float(os.getenv("CONTROL_INTERVAL_SECONDS", "5"))
 WORKER_URL = os.getenv("WORKER_URL", "http://ppo-workers:8001/work")
+WORKER_HEALTH_URL = os.getenv("WORKER_HEALTH_URL", "http://ppo-workers:8001/health")
 DEPLOYMENT = os.getenv("WORKER_DEPLOYMENT", "ppo-workers")
 NAMESPACE = os.getenv("POD_NAMESPACE", "default")
 POLICY = PPOAgent.load(MODEL) if ROLE == "gateway" else None
@@ -85,6 +86,20 @@ app = FastAPI(title="PPO Kubernetes Autoscaler Demo", lifespan=lifespan)
 @app.get("/health")
 def health():
     return {"status": "ok", "role": ROLE}
+
+
+@app.get("/ready")
+async def readiness():
+    """Report ready only when the gateway can reach a worker pod."""
+    if ROLE == "gateway":
+        if worker_client is None:
+            raise HTTPException(503, "worker client is not initialized")
+        try:
+            response = await worker_client.get(WORKER_HEALTH_URL)
+            response.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise HTTPException(503, f"worker service is not ready: {exc}") from exc
+    return {"status": "ready", "role": ROLE}
 
 
 @app.get("/api/state")
