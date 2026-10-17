@@ -31,7 +31,7 @@ def generate_rate(scenario, i, rng=None):
 
 def generate_workload(points=None):
     points = DURATION_MINUTES * 60 // INTERVAL_SECONDS if points is None else points
-    if points <= 0:
+    if isinstance(points, bool) or not isinstance(points, int) or points <= 0:
         raise ValueError("points must be a positive integer")
     rows = []
     for scenario_index, scenario in enumerate(SCENARIOS):

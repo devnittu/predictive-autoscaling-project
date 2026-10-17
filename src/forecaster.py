@@ -20,7 +20,11 @@ TRAIN_FRACTION = 0.75
 
 def create_features(values):
     """Each row predicts target interval t from values available through t-1."""
-    frame = pd.DataFrame({"actual_rps": values})
+    frame = pd.DataFrame({"actual_rps": pd.to_numeric(values, errors="coerce")})
+    if frame.empty or frame.actual_rps.isna().any() or not np.isfinite(frame.actual_rps).all():
+        raise ValueError("values must contain finite numeric request rates")
+    if (frame.actual_rps < 0).any():
+        raise ValueError("values must contain non-negative request rates")
     for lag in range(1, LAGS + 1):
         frame[f"lag_{lag}"] = frame["actual_rps"].shift(lag)
     frame[f"seasonal_lag_{SEASONAL_LAG}"] = frame["actual_rps"].shift(SEASONAL_LAG)
@@ -30,6 +34,14 @@ def create_features(values):
 
 def chronological_split(data, split_target):
     """Split forecast targets at a fixed interval, without shuffling."""
+    if (isinstance(split_target, bool) or not isinstance(split_target, (int, np.integer))
+            or split_target < 1):
+        raise ValueError("split_target must be a positive integer")
+    required = {"target_interval", "actual_rps"}
+    if not required.issubset(data.columns):
+        raise ValueError(f"forecast data missing columns: {sorted(required - set(data.columns))}")
+    if data[list(required)].isna().any().any():
+        raise ValueError("forecast data contains missing target values")
     train = data[data.target_interval < split_target].copy()
     test = data[data.target_interval >= split_target].copy()
     if train.empty or test.empty:
@@ -41,11 +53,16 @@ def chronological_split(data, split_target):
 
 def build_forecast_frame(scenario, test, predictions):
     """Return forecast records whose origin is exactly one interval before target."""
+    if not isinstance(scenario, str) or not scenario:
+        raise ValueError("scenario must be a non-empty string")
     target = test.target_interval.astype(int).to_numpy()
     actual = test.actual_rps.to_numpy(dtype=float)
     predictions = np.asarray(predictions, dtype=float)
     if len(target) != len(actual) or len(target) != len(predictions):
         raise ValueError("test targets, actuals and predictions must have equal lengths")
+    if (not np.isfinite(actual).all() or (actual < 0).any()
+            or not np.isfinite(predictions).all() or (predictions < 0).any()):
+        raise ValueError("actuals and predictions must be finite and non-negative")
     return pd.DataFrame({
         "scenario": scenario,
         "interval": target,
