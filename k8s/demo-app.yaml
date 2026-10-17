@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autoscaling-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: autoscaling-demo
+  template:
+    metadata:
+      labels:
+        app: autoscaling-demo
+    spec:
+      containers:
+        - name: demo
+          image: autoscaling-demo:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autoscaling-demo
+spec:
+  selector:
+    app: autoscaling-demo
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP

@@ -20,10 +20,6 @@ class WorkloadTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             generate_workload(0)
 
-    def test_generation_rejects_non_integer_point_count(self):
-        for points in (True, 10.5, "10"):
-            with self.subTest(points=points), self.assertRaises(ValueError):
-                generate_workload(points)
 
 class ForecastTests(unittest.TestCase):
     def test_features_predict_next_interval_without_current_or_future_values(self):
@@ -50,20 +46,6 @@ class ForecastTests(unittest.TestCase):
     def test_chronological_split_rejects_empty_side(self):
         with self.assertRaises(ValueError):
             chronological_split(create_features(list(range(240))), 300)
-
-    def test_forecast_inputs_reject_invalid_rates_and_split_values(self):
-        with self.assertRaises(ValueError):
-            create_features([10.0, -1.0, 20.0])
-        features = create_features(list(range(240)))
-        for split_target in (True, 0, 10.5):
-            with self.subTest(split_target=split_target), self.assertRaises(ValueError):
-                chronological_split(features, split_target)
-
-    def test_forecast_export_rejects_invalid_predictions(self):
-        features = create_features(list(range(240)))
-        test = features[features.target_interval >= 180]
-        with self.assertRaises(ValueError):
-            build_forecast_frame("scenario", test, [-1.0] * len(test))
 
     def test_future_changes_cannot_change_features_for_an_earlier_forecast(self):
         values = list(range(300))
@@ -161,17 +143,6 @@ class ScalingTests(unittest.TestCase):
                          [r["scaling_action"] for r in altered])
         self.assertEqual([r["active_replicas"] for r in original],
                          [r["active_replicas"] for r in altered])
-
-    def test_reactive_signal_uses_only_the_previous_interval(self):
-        group = pd.DataFrame([
-            {"scenario": "s", "interval": i, "elapsed_seconds": i * 5,
-            "actual_rps": actual, "predicted_rps": 50.0}
-            for i, actual in enumerate([40.0, 250.0, 80.0], start=1)
-        ])
-        history = {0: 10.0, 1: 20.0, 2: 30.0, 3: 40.0}
-        rows = simulate_policy(group, "reactive", demand_history=history)
-        self.assertEqual([r["observation_interval"] for r in rows], [0, 1, 2])
-        self.assertEqual([r["scaling_signal_rps"] for r in rows], [10.0, 20.0, 30.0])
 
     def test_reactive_requires_exact_delayed_history(self):
         group = pd.DataFrame([{

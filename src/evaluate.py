@@ -130,7 +130,6 @@ def simulate_policy(group, policy, observation_delay=OBSERVATION_DELAY_INTERVALS
 def summarize_scaling(result):
     summaries = []
     for (scenario, policy), group in result.groupby(["scenario", "policy"], sort=True):
-        group = group.sort_values("interval").reset_index(drop=True)
         overload = group.estimated_overload_rps.to_numpy()
         episodes = int(((overload > 0) & (pd.Series(overload).shift(fill_value=0) == 0)).sum())
         recovery_times = []
