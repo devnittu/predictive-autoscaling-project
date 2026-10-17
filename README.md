@@ -17,6 +17,21 @@ workload_generator -> workload.csv -> forecaster -> forecast CSV + accuracy plot
 
 The original `src.app` FastAPI service remains a health-check example. The separate PPO demo below runs a gateway and worker Deployment; the gateway forwards real HTTP requests and patches the worker Deployment scale through Kubernetes RBAC.
 
+## Team split in this monorepo
+
+Two teammates can work in parallel in the same repository:
+
+- [team-forecasting/](./team-forecasting/) owns workload generation, forecasting,
+  offline evaluation, and reactive-versus-predictive fairness tests.
+- [team-ppo-kubernetes/](./team-ppo-kubernetes/) owns PPO training/evaluation,
+  the live Kubernetes path, RBAC/manifests, and LinuxONE validation.
+
+The folders are ownership/workspace boundaries, not separate Python packages.
+Executable files remain in the existing `src/`, `tests/`, `k8s/`, and root
+configuration locations so imports and the documented commands stay unchanged.
+Coordinate changes to shared `README.md`, generated outputs, and dependency
+files before merging.
+
 ## Setup and run
 
 Use Python 3.11 or newer. In Windows PowerShell:
